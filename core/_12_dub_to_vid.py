@@ -1,3 +1,4 @@
+import os
 import platform
 import subprocess
 
@@ -14,18 +15,28 @@ console = Console()
 
 DUB_VIDEO = "output/output_dub.mp4"
 DUB_SUB_FILE = 'output/dub.srt'
+SRC_SUB_FILE = 'output/src.srt'
 DUB_AUDIO = 'output/dub.mp3'
+
+SRC_FONT_SIZE = 15
+SRC_FONT_COLOR = '&HFFFFFF'
+SRC_OUTLINE_COLOR = '&H000000'
+SRC_OUTLINE_WIDTH = 1
+SRC_SHADOW_COLOR = '&H80000000'
 
 TRANS_FONT_SIZE = 17
 TRANS_FONT_NAME = 'Arial'
+SRC_FONT_NAME = 'Arial'
 if platform.system() == 'Linux':
     TRANS_FONT_NAME = 'NotoSansCJK-Regular'
+    SRC_FONT_NAME = 'NotoSansCJK-Regular'
 if platform.system() == 'Darwin':
     TRANS_FONT_NAME = 'Arial Unicode MS'
+    SRC_FONT_NAME = 'Arial Unicode MS'
 
 TRANS_FONT_COLOR = '&H00FFFF'
 TRANS_OUTLINE_COLOR = '&H000000'
-TRANS_OUTLINE_WIDTH = 1 
+TRANS_OUTLINE_WIDTH = 1
 TRANS_BACK_COLOR = '&H33000000'
 
 def merge_video_audio():
@@ -57,8 +68,14 @@ def merge_video_audio():
     video.release()
     rprint(f"[bold green]Video resolution: {TARGET_WIDTH}x{TARGET_HEIGHT}[/bold green]")
     
+    abs_dub_sub = os.path.abspath(DUB_SUB_FILE)
+    abs_src_sub = os.path.abspath(SRC_SUB_FILE)
     subtitle_filter = (
-        f"subtitles={DUB_SUB_FILE}:force_style='FontSize={TRANS_FONT_SIZE},"
+        f"subtitles=filename='{abs_src_sub}':force_style='FontSize={SRC_FONT_SIZE},"
+        f"FontName={SRC_FONT_NAME},PrimaryColour={SRC_FONT_COLOR},"
+        f"OutlineColour={SRC_OUTLINE_COLOR},OutlineWidth={SRC_OUTLINE_WIDTH},"
+        f"ShadowColour={SRC_SHADOW_COLOR},BorderStyle=1',"
+        f"subtitles=filename='{abs_dub_sub}':force_style='FontSize={TRANS_FONT_SIZE},"
         f"FontName={TRANS_FONT_NAME},PrimaryColour={TRANS_FONT_COLOR},"
         f"OutlineColour={TRANS_OUTLINE_COLOR},OutlineWidth={TRANS_OUTLINE_WIDTH},"
         f"BackColour={TRANS_BACK_COLOR},Alignment=2,MarginV=27,BorderStyle=4'"

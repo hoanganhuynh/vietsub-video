@@ -2,6 +2,10 @@ from pathlib import Path
 import edge_tts
 from core.utils import *
 import subprocess
+import sys
+import os
+
+_EDGE_TTS_BIN = os.path.join(os.path.dirname(sys.executable), "edge-tts")
 
 # Available voices can be listed using edge-tts --list-voices command
 # Common English voices:
@@ -21,7 +25,7 @@ def edge_tts(text, save_path):
     speech_file_path = Path(save_path)
     speech_file_path.parent.mkdir(parents=True, exist_ok=True)
     
-    cmd = ["edge-tts", "--voice", voice, "--text", text, "--write-media", str(speech_file_path)]
+    cmd = [_EDGE_TTS_BIN, "--voice", voice, "--text", text, "--write-media", str(speech_file_path)]
     subprocess.run(cmd, check=True)
     print(f"Audio saved to {speech_file_path}")
 
