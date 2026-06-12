@@ -315,7 +315,22 @@ def page_setting():
                 st.rerun()
 
         elif select_tts == "edge_tts":
-            config_input(t("Edge TTS Voice"), "edge_tts.voice")
+            import subprocess, sys, os as _os
+            _edge_bin = _os.path.join(_os.path.dirname(sys.executable), "edge-tts")
+            try:
+                _voices_raw = subprocess.check_output([_edge_bin, "--list-voices"], text=True)
+                _vi_voices = [line.split()[0] for line in _voices_raw.strip().splitlines() if line.startswith("vi-VN")]
+            except Exception:
+                _vi_voices = ["vi-VN-HoaiMyNeural", "vi-VN-NamMinhNeural"]
+            _current_voice = load_key("edge_tts.voice")
+            _selected_voice = st.selectbox(
+                t("Edge TTS Voice"),
+                options=_vi_voices,
+                index=_vi_voices.index(_current_voice) if _current_voice in _vi_voices else 0,
+            )
+            if _selected_voice != _current_voice:
+                update_key("edge_tts.voice", _selected_voice)
+                st.rerun()
 
         elif select_tts == "sf_cosyvoice2":
             config_input(t("SiliconFlow API Key"), "sf_cosyvoice2.api_key")
