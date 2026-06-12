@@ -69,6 +69,25 @@ reflect_translate: true
 # *Whether to pause after extracting professional terms and before translation, allowing users to manually adjust the terminology table output\log\terminology.json
 pause_before_translate: false
 
+## ======================== Subtitle Style ======================== ##
+subtitle_style:
+  src_font_size: 15
+  src_font_color: '&HFFFFFF'
+  src_outline_color: '&H000000'
+  trans_font_size: 17
+  trans_font_color: '&H00FFFF'
+  trans_outline_color: '&H000000'
+  trans_back_color: '&H33000000'
+  margin_v: 27
+
+## ======================== Logo Settings ======================== ##
+logo:
+  enabled: false
+  path: ''
+  position: 'bottom-right'
+  width: 150
+  margin: 20
+
 ## ======================== Dubbing Settings ======================== ##
 # TTS selection [sf_fish_tts, openai_tts, gpt_sovits, azure_tts, fish_tts, edge_tts, custom_tts]
 tts_method: 'edge_tts'

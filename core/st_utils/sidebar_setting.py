@@ -338,6 +338,68 @@ def page_setting():
         elif select_tts == "f5tts":
             config_input("302ai API", "f5tts.302_api")
 
+    with st.expander("🎨 Subtitle Style", expanded=False):
+        st.caption("Color format: ASS &HAABBGGRR  (e.g. &HFFFFFF=white, &H00FFFF=cyan)")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Source (EN)**")
+            src_size = st.slider("Font size", 8, 40, int(load_key("subtitle_style.src_font_size") or 15), key="src_sz")
+            if src_size != load_key("subtitle_style.src_font_size"):
+                update_key("subtitle_style.src_font_size", src_size)
+            src_col = st.text_input("Color", value=load_key("subtitle_style.src_font_color") or "&HFFFFFF", key="src_col")
+            if src_col != load_key("subtitle_style.src_font_color"):
+                update_key("subtitle_style.src_font_color", src_col)
+        with col2:
+            st.markdown("**Translation (VI)**")
+            trans_size = st.slider("Font size", 8, 40, int(load_key("subtitle_style.trans_font_size") or 17), key="trans_sz")
+            if trans_size != load_key("subtitle_style.trans_font_size"):
+                update_key("subtitle_style.trans_font_size", trans_size)
+            trans_col = st.text_input("Color", value=load_key("subtitle_style.trans_font_color") or "&H00FFFF", key="trans_col")
+            if trans_col != load_key("subtitle_style.trans_font_color"):
+                update_key("subtitle_style.trans_font_color", trans_col)
+        margin_v = st.slider("Bottom margin (MarginV)", 0, 100, int(load_key("subtitle_style.margin_v") or 27), key="margin_v")
+        if margin_v != load_key("subtitle_style.margin_v"):
+            update_key("subtitle_style.margin_v", margin_v)
+
+        if st.button("👁 Preview subtitles", use_container_width=True):
+            from core.st_utils.subtitle_preview import generate_preview
+            with st.spinner("Generating preview frame..."):
+                img = generate_preview()
+            if img:
+                st.image(img, use_container_width=True)
+            else:
+                st.warning("No subtitle files found. Complete translation step first.")
+
+    with st.expander("🖼 Logo", expanded=False):
+        logo_file = st.file_uploader("Upload logo (PNG/SVG)", type=["png", "jpg", "svg"], key="logo_upload")
+        if logo_file:
+            import os as _os
+            logo_save = _os.path.abspath("output/logo.png")
+            _os.makedirs("output", exist_ok=True)
+            with open(logo_save, "wb") as f:
+                f.write(logo_file.read())
+            update_key("logo.path", logo_save)
+            st.success(f"Logo saved: {logo_file.name}")
+
+        logo_enabled = st.toggle("Enable logo overlay", value=bool(load_key("logo.enabled")), key="logo_en")
+        if logo_enabled != load_key("logo.enabled"):
+            update_key("logo.enabled", logo_enabled)
+
+        col1, col2 = st.columns(2)
+        with col1:
+            pos = st.selectbox("Position", ["bottom-right", "bottom-left", "top-right", "top-left"],
+                               index=["bottom-right","bottom-left","top-right","top-left"].index(
+                                   load_key("logo.position") or "bottom-right"), key="logo_pos")
+            if pos != load_key("logo.position"):
+                update_key("logo.position", pos)
+        with col2:
+            logo_w = st.slider("Width (px)", 50, 400, int(load_key("logo.width") or 150), key="logo_w")
+            if logo_w != load_key("logo.width"):
+                update_key("logo.width", logo_w)
+        logo_margin = st.slider("Margin (px)", 0, 80, int(load_key("logo.margin") or 20), key="logo_margin")
+        if logo_margin != load_key("logo.margin"):
+            update_key("logo.margin", logo_margin)
+
 
 def check_api():
     try:

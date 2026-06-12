@@ -70,24 +70,58 @@ def merge_video_audio():
     
     abs_dub_sub = os.path.abspath(DUB_SUB_FILE)
     abs_src_sub = os.path.abspath(SRC_SUB_FILE)
+
+    s = load_key("subtitle_style") or {}
+    _src_size  = s.get("src_font_size",       SRC_FONT_SIZE)
+    _src_col   = s.get("src_font_color",      SRC_FONT_COLOR)
+    _src_out   = s.get("src_outline_color",   SRC_OUTLINE_COLOR)
+    _tr_size   = s.get("trans_font_size",     TRANS_FONT_SIZE)
+    _tr_col    = s.get("trans_font_color",    TRANS_FONT_COLOR)
+    _tr_out    = s.get("trans_outline_color", TRANS_OUTLINE_COLOR)
+    _tr_back   = s.get("trans_back_color",    TRANS_BACK_COLOR)
+    _margin_v  = s.get("margin_v", 27)
+
     subtitle_filter = (
-        f"subtitles=filename='{abs_src_sub}':force_style='FontSize={SRC_FONT_SIZE},"
-        f"FontName={SRC_FONT_NAME},PrimaryColour={SRC_FONT_COLOR},"
-        f"OutlineColour={SRC_OUTLINE_COLOR},OutlineWidth={SRC_OUTLINE_WIDTH},"
+        f"subtitles=filename='{abs_src_sub}':force_style='FontSize={_src_size},"
+        f"FontName={SRC_FONT_NAME},PrimaryColour={_src_col},"
+        f"OutlineColour={_src_out},OutlineWidth={SRC_OUTLINE_WIDTH},"
         f"ShadowColour={SRC_SHADOW_COLOR},BorderStyle=1',"
-        f"subtitles=filename='{abs_dub_sub}':force_style='FontSize={TRANS_FONT_SIZE},"
-        f"FontName={TRANS_FONT_NAME},PrimaryColour={TRANS_FONT_COLOR},"
-        f"OutlineColour={TRANS_OUTLINE_COLOR},OutlineWidth={TRANS_OUTLINE_WIDTH},"
-        f"BackColour={TRANS_BACK_COLOR},Alignment=2,MarginV=27,BorderStyle=4'"
+        f"subtitles=filename='{abs_dub_sub}':force_style='FontSize={_tr_size},"
+        f"FontName={TRANS_FONT_NAME},PrimaryColour={_tr_col},"
+        f"OutlineColour={_tr_out},OutlineWidth={TRANS_OUTLINE_WIDTH},"
+        f"BackColour={_tr_back},Alignment=2,MarginV={_margin_v},BorderStyle=4'"
     )
     
+    logo_path    = load_key("logo.path") or ""
+    logo_enabled = load_key("logo.enabled")
+    extra_inputs = []
+    if logo_enabled and logo_path and os.path.exists(logo_path):
+        logo_w      = load_key("logo.width")  or 150
+        logo_margin = load_key("logo.margin") or 20
+        pos_map = {
+            "top-left":     f"{logo_margin}:{logo_margin}",
+            "top-right":    f"W-w-{logo_margin}:{logo_margin}",
+            "bottom-left":  f"{logo_margin}:H-h-{logo_margin}",
+            "bottom-right": f"W-w-{logo_margin}:H-h-{logo_margin}",
+        }
+        pos = pos_map.get(load_key("logo.position") or "bottom-right", f"W-w-{logo_margin}:H-h-{logo_margin}")
+        extra_inputs = ['-i', logo_path]
+        video_fc = (
+            f'[0:v]scale={TARGET_WIDTH}:{TARGET_HEIGHT}:force_original_aspect_ratio=decrease,'
+            f'pad={TARGET_WIDTH}:{TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2,'
+            f'{subtitle_filter}[sub];[3:v]scale={logo_w}:-1[logo];[sub][logo]overlay={pos}[v]'
+        )
+    else:
+        video_fc = (
+            f'[0:v]scale={TARGET_WIDTH}:{TARGET_HEIGHT}:force_original_aspect_ratio=decrease,'
+            f'pad={TARGET_WIDTH}:{TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2,'
+            f'{subtitle_filter}[v]'
+        )
+
     cmd = [
         'ffmpeg', '-y', '-i', VIDEO_FILE, '-i', background_file, '-i', normalized_dub_audio,
-        '-filter_complex',
-        f'[0:v]scale={TARGET_WIDTH}:{TARGET_HEIGHT}:force_original_aspect_ratio=decrease,'
-        f'pad={TARGET_WIDTH}:{TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2,'
-        f'{subtitle_filter}[v];'
-        f'[1:a][2:a]amix=inputs=2:duration=first:dropout_transition=3[a]'
+        *extra_inputs,
+        '-filter_complex', video_fc + ';[1:a][2:a]amix=inputs=2:duration=first:dropout_transition=3[a]'
     ]
 
     if load_key("ffmpeg_gpu"):

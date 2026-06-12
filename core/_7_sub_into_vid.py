@@ -69,19 +69,44 @@ def merge_subtitles_to_video():
     rprint(f"[bold green]Video resolution: {TARGET_WIDTH}x{TARGET_HEIGHT}[/bold green]")
     abs_src_srt = os.path.abspath(SRC_SRT)
     abs_trans_srt = os.path.abspath(TRANS_SRT)
-    ffmpeg_cmd = [
-        'ffmpeg', '-i', video_file,
-        '-vf', (
-            f"scale={TARGET_WIDTH}:{TARGET_HEIGHT}:force_original_aspect_ratio=decrease,"
-            f"pad={TARGET_WIDTH}:{TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2,"
-            f"subtitles=filename='{abs_src_srt}':force_style='FontSize={SRC_FONT_SIZE},FontName={FONT_NAME},"
-            f"PrimaryColour={SRC_FONT_COLOR},OutlineColour={SRC_OUTLINE_COLOR},OutlineWidth={SRC_OUTLINE_WIDTH},"
-            f"ShadowColour={SRC_SHADOW_COLOR},BorderStyle=1',"
-            f"subtitles=filename='{abs_trans_srt}':force_style='FontSize={TRANS_FONT_SIZE},FontName={TRANS_FONT_NAME},"
-            f"PrimaryColour={TRANS_FONT_COLOR},OutlineColour={TRANS_OUTLINE_COLOR},OutlineWidth={TRANS_OUTLINE_WIDTH},"
-            f"BackColour={TRANS_BACK_COLOR},Alignment=2,MarginV=27,BorderStyle=4'"
-        ),
-    ]
+
+    s = load_key("subtitle_style") or {}
+    _src_size  = s.get("src_font_size",    SRC_FONT_SIZE)
+    _src_col   = s.get("src_font_color",   SRC_FONT_COLOR)
+    _src_out   = s.get("src_outline_color",SRC_OUTLINE_COLOR)
+    _tr_size   = s.get("trans_font_size",  TRANS_FONT_SIZE)
+    _tr_col    = s.get("trans_font_color", TRANS_FONT_COLOR)
+    _tr_out    = s.get("trans_outline_color", TRANS_OUTLINE_COLOR)
+    _tr_back   = s.get("trans_back_color", TRANS_BACK_COLOR)
+    _margin_v  = s.get("margin_v", 27)
+
+    sub_vf = (
+        f"scale={TARGET_WIDTH}:{TARGET_HEIGHT}:force_original_aspect_ratio=decrease,"
+        f"pad={TARGET_WIDTH}:{TARGET_HEIGHT}:(ow-iw)/2:(oh-ih)/2,"
+        f"subtitles=filename='{abs_src_srt}':force_style='FontSize={_src_size},FontName={FONT_NAME},"
+        f"PrimaryColour={_src_col},OutlineColour={_src_out},OutlineWidth={SRC_OUTLINE_WIDTH},"
+        f"ShadowColour={SRC_SHADOW_COLOR},BorderStyle=1',"
+        f"subtitles=filename='{abs_trans_srt}':force_style='FontSize={_tr_size},FontName={TRANS_FONT_NAME},"
+        f"PrimaryColour={_tr_col},OutlineColour={_tr_out},OutlineWidth={TRANS_OUTLINE_WIDTH},"
+        f"BackColour={_tr_back},Alignment=2,MarginV={_margin_v},BorderStyle=4'"
+    )
+
+    logo_path = load_key("logo.path") or ""
+    logo_enabled = load_key("logo.enabled")
+    if logo_enabled and logo_path and os.path.exists(logo_path):
+        logo_w      = load_key("logo.width")  or 150
+        logo_margin = load_key("logo.margin") or 20
+        pos_map = {
+            "top-left":     f"{logo_margin}:{logo_margin}",
+            "top-right":    f"W-w-{logo_margin}:{logo_margin}",
+            "bottom-left":  f"{logo_margin}:H-h-{logo_margin}",
+            "bottom-right": f"W-w-{logo_margin}:H-h-{logo_margin}",
+        }
+        pos = pos_map.get(load_key("logo.position") or "bottom-right", f"W-w-{logo_margin}:H-h-{logo_margin}")
+        fc = f"[0:v]{sub_vf}[sub];[1:v]scale={logo_w}:-1[logo];[sub][logo]overlay={pos}"
+        ffmpeg_cmd = ['ffmpeg', '-i', video_file, '-i', logo_path, '-filter_complex', fc]
+    else:
+        ffmpeg_cmd = ['ffmpeg', '-i', video_file, '-vf', sub_vf]
 
     ffmpeg_gpu = load_key("ffmpeg_gpu")
     if ffmpeg_gpu:
